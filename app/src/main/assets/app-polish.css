@@ -1,0 +1,177 @@
+/* 3.2.2: one visual system, stable surfaces and bounded animation cost. */
+html[data-theme=light]{
+  --bg:#F5F3EB;--surface:#FFFEF8;--surface-2:#EDEFE5;--ink:#35473F;
+  --ink-2:#627168;--ink-3:#718078;--accent:#347E6C;--on-accent:#FFFFFF;
+  --line:rgba(53,78,62,.13);--sun:#F5D978;--sun-deep:#D7B654;--sun-ink:#584924;
+  --hud:#FFFEF8;--hud-sh:0 3px 12px rgba(39,66,50,.10),0 0 0 1px rgba(53,78,62,.10);
+}
+html[data-theme=dark]{--hud:#293B3A;--hud-sh:0 3px 12px rgba(0,0,0,.20),0 0 0 1px rgba(208,235,220,.12)}
+button,input,textarea,select{font-family:var(--font)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+button:disabled{cursor:default}
+.row .r-t b{font-weight:650}.row .r-t small{line-height:1.55}
+.phead h1{font-size:29px;font-weight:750;letter-spacing:.01em}
+.phead p{font-size:13px;line-height:1.6}.sec{font-weight:650;letter-spacing:.05em}
+.scroll{padding-bottom:calc(var(--sab) + 112px)!important;scroll-padding-bottom:112px}
+#pages>.page:not(.on){display:none!important}
+#pages>.page.on{display:block!important}
+.page,.ovp{backface-visibility:visible!important}
+.glass,.hud-top,.hud-rail,.hud-quest,.qbag,.nav,#isleClock,
+.phead::before,.ov-bar,.ed-top,.l31-q,.l31-photo-bar{
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+}
+.phead.scrolled::before,.ov-bar{background:var(--bg)!important}
+
+/* Keep a stable camera surface. Repeated layer promotion caused WebView flashes. */
+#homeStage .oc-cam-plane{backface-visibility:visible!important;-webkit-backface-visibility:visible!important;will-change:auto!important}
+.orb{will-change:auto}.cd{will-change:transform}
+.ground-texture{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;object-fit:fill;display:block}
+.ground-texture[hidden]{display:none!important}
+#homeStage .actor .a-shadow{will-change:transform}
+html:not([data-quality=full]) .actor svg *,
+html:not([data-quality=full]) .thumb svg *,
+html:not([data-quality=full]) .mini-art svg *,
+html:not([data-quality=full]) .actor .a-tilt,
+html:not([data-quality=full]) .actor .a-pose,
+html:not([data-quality=full]) .actor .art,
+html:not([data-quality=full]) .thumb .art,
+html:not([data-quality=full]) .stars i,
+html:not([data-quality=full]) .ffly i,
+html:not([data-quality=full]) .isle-tuft,
+html:not([data-quality=full]) .isle-glint,
+html:not([data-quality=full]) .scene-tree .sw,
+html:not([data-quality=full]) .isle-cshade i,
+html:not([data-quality=full]) #isleLight .rays{
+  animation:none!important;will-change:auto!important;
+}
+html:not([data-quality=full]) .actor svg *{backface-visibility:visible!important}
+html:not([data-quality=full]) .isle-bfly :is(i,.wl,.wr){animation:none!important}
+html:not([data-quality=full]) .isle-bfly{transition:transform 5s linear,opacity 1s}
+html:not([data-quality=full]) .hud-quest.ready,
+html:not([data-quality=full]) .l30-hot{animation:none!important}
+html[data-quality=battery] .actor .art,
+html[data-quality=battery] .isle-fire *,
+html[data-quality=battery] .stars *,
+html[data-quality=battery] .ffly *{animation:none!important}
+html[data-quality=battery] .isle-cshade{display:none!important}
+
+/* Fixed-size HUD controls: no idle shrink / expand or opacity cycling. */
+#p-home .hud-top,#p-home.idle .hud-top,#p-home #hudRail,#p-home.idle #hudRail,
+#p-home #fab,#p-home.idle #fab,#p-home #questCard,#p-home.idle #questCard,
+#p-home #isleClock,#p-home.idle #isleClock,#p-home #qbag,#p-home.idle #qbag,
+#app.hud-idle #nav{opacity:1!important}
+#p-home .hud-top{left:14px;right:80px;top:calc(var(--sat) + 14px);gap:0;max-width:340px}
+#homeChip{width:52px;height:52px;flex:none;border:2px solid var(--surface);background:var(--surface);box-shadow:var(--hud-sh)}
+#homeChip .hav{width:46px;height:46px}
+#homeChip .av-dot{width:9px;height:9px;border:2px solid var(--surface)}
+#hudCap{margin-left:-12px;padding:8px 12px 8px 22px;min-height:44px;gap:0;border-radius:0 16px 16px 0;background:var(--hud);box-shadow:var(--hud-sh)}
+#hudCap .cap-main{gap:8px;min-height:27px}
+#hudCap .cap-main .bar,#p-home.idle #hudCap .cap-main .bar{width:36px!important;opacity:1!important;margin:0!important}
+#hudCap .res{min-width:48px;min-height:30px;gap:3px;font-size:13px;background:var(--surface-2)}
+#hudCap .lvc{white-space:nowrap;font-size:12px}
+#hudCap .cap-ext{transition:none;max-height:0}
+#hudCap.open .cap-ext{max-height:54px}
+#isleClock{left:14px;top:calc(var(--sat) + 76px);border:0;padding:6px 11px 6px 6px;min-height:42px;border-radius:16px;box-shadow:var(--hud-sh)}
+#isleClock b{font-size:16px;font-weight:700}
+#isleClock small{font-size:10px;font-weight:500;min-width:0}
+#hudRail{right:14px;top:calc(var(--sat) + 14px)}
+#hudRail>.rail-btn{width:52px!important;height:52px!important;border-radius:17px!important;display:flex!important;flex-direction:column;justify-content:center;gap:2px;background:var(--accent)!important;box-shadow:var(--hud-sh)!important}
+#hudRail>.rail-btn .hud-label{font-size:10px;font-weight:600;line-height:1;display:block!important;color:var(--on-accent)}
+#hudRail .rail-ext{width:min(308px,calc(100vw - 28px))!important;border:1px solid var(--line);border-radius:22px!important;box-shadow:0 12px 32px rgba(25,52,42,.17)!important;right:0;top:64px}
+#hudRail .rail-ext .rail-btn{min-height:62px;border-radius:14px;font-size:12px}
+#hudRail .hub-heading{font-size:14px;font-weight:700}
+#hudRail .rail-ext .rail-btn:active{background:var(--accent-soft)}
+#questCard{right:14px;bottom:calc(var(--sab) + 96px);height:44px!important;max-width:calc(100% - 100px);border:1px solid var(--line)!important;border-radius:16px!important;padding:6px 10px;box-shadow:var(--hud-sh)!important;animation:none!important}
+#questCard .qc-t b{font-size:10px;font-weight:500;color:var(--ink-2)}
+#questCard .qc-t small{font-size:12px!important;font-weight:650;line-height:1.4}
+#questCard .qc-t{display:flex!important;flex-direction:column;gap:1px;max-width:185px!important;opacity:1!important}
+#questCard .qc-ic{width:28px;height:28px}
+#questCard .chev{display:none}
+#questCard.ready{background:var(--sun)!important}
+#fab{bottom:calc(var(--sab) + 96px)}
+#qaToggle{width:48px!important;height:48px!important;border-radius:17px!important;border:1px solid var(--line)!important;box-shadow:var(--hud-sh)!important}
+#camFollow{width:44px;height:44px;border-radius:15px;box-shadow:var(--hud-sh)}
+#qbFab{width:48px;height:48px;border-radius:17px;box-shadow:var(--hud-sh)}
+#qbN{min-width:18px;height:18px;font-size:10px}
+.community-name{font-size:10px!important;max-width:112px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:rgba(255,254,248,.82)!important;backdrop-filter:none!important}
+html[data-theme=dark] .community-name{background:rgba(34,52,48,.90)!important;color:var(--ink)!important}
+
+/* Every destination has a readable label and a complete touch target. */
+#nav.nav{left:12px!important;right:12px!important;bottom:calc(var(--sab) + 8px)!important;width:auto!important;max-width:560px;height:72px!important;padding:5px!important;gap:2px!important;border-radius:24px!important;background:var(--surface)!important;border:1px solid var(--line);box-shadow:0 4px 18px rgba(24,47,38,.14)!important;opacity:1!important}
+#nav .nav-btn{height:60px!important;min-width:0;display:flex!important;flex-direction:column!important;gap:4px!important;border-radius:19px!important;background:transparent!important;box-shadow:none!important;transform:none!important;padding:6px 2px!important;opacity:1!important;color:var(--ink-2)}
+#nav .nav-btn span[data-ic]{display:block!important;height:23px;line-height:1}
+#nav .nav-btn svg{width:23px;height:23px;animation:none!important}
+#nav .nav-btn .nav-label{display:block!important;font-size:10px;font-weight:600;line-height:1.2;white-space:nowrap;letter-spacing:.02em}
+#nav:not(.nx-lab) .nav-btn .nav-label{display:none!important}
+#nav.nx-lab .nav-btn::after{content:none!important}
+#nav .nav-btn.on{background:var(--accent-soft)!important;color:var(--accent)!important}
+#navInd{display:none!important}#nav .nav-btn .nd{display:none}
+#nav .nav-btn.nx-off{display:none!important}
+#nav .nav-btn:active{background:var(--surface-2)!important}
+#nav.nx-few{max-width:560px!important}
+
+/* Stable opaque sheets, short motion once per surface. */
+html:not([data-motion=reduce]) #layer>.sheet,
+html:not([data-motion=reduce]) #layer>.sheet.community-sheet,
+html:not([data-motion=reduce]) #layer>.sheet.resident-picker-sheet{
+  transform:translateY(18px);opacity:0;transition:transform .18s ease-out,opacity .14s ease-out;will-change:auto;
+}
+html:not([data-motion=reduce]) #layer>.sheet.open,
+html:not([data-motion=reduce]) #layer>.sheet.community-sheet.open,
+html:not([data-motion=reduce]) #layer>.sheet.resident-picker-sheet.open{transform:none;opacity:1}
+html:not([data-motion=reduce]) #layer>.sheet[data-closing]{transform:translateY(12px);opacity:0;transition:transform .14s ease-in,opacity .12s ease-in}
+html:not([data-motion=reduce]) #layer>.sheet.under{transform:none!important;opacity:0!important}
+#layer .sheet{border:1px solid var(--line);border-bottom:0;border-radius:25px 25px 0 0!important;box-shadow:0 -5px 24px rgba(30,52,42,.13)!important}
+.sh-body{overscroll-behavior:contain}
+.sheet .chip{min-height:40px}
+.sheet input[type=search]{min-height:44px}
+.btn{min-height:44px;font-weight:650}.btn.sm{min-height:38px}
+.oc-card{animation:none!important;border-radius:22px!important;box-shadow:0 2px 8px rgba(41,66,48,.06)!important}
+.oc-card.isle{border-color:var(--line)!important}
+.oc-card.ctrl{border-color:var(--accent)!important;box-shadow:0 0 0 1px var(--accent)!important}
+.oc-open{aspect-ratio:1.08!important;background:linear-gradient(150deg,var(--surface-2),var(--surface))!important}
+.oc-body{padding:12px!important}.oc-name{font-size:15px!important;font-weight:700}
+.oc-b{min-height:40px!important;font-size:11px!important}.oc-b.on{color:var(--accent)!important;background:var(--accent-soft)!important}
+.oc-bar{margin-bottom:14px!important;border:1px solid var(--line);background:var(--surface)!important}
+.oc-bar button{min-height:38px}.oc-grid{gap:12px!important}
+.tls-card,.tls-hero,.tls-store{animation:none!important}
+html:not([data-quality=full]) .tls-hart>*,html:not([data-quality=full]) .tls-shine,
+html:not([data-quality=full]) .tld-art,html:not([data-quality=full]) .tld-ray{animation:none!important}
+.tls-art,.tls-hart,.tld-art{filter:none!important}
+.pf-tabs button,.tls-tab{min-height:44px}
+.q-needs .qn{min-height:32px}.l31-q{top:calc(var(--sat) + 128px)!important;border:1px solid var(--line);box-shadow:0 8px 30px rgba(24,47,38,.17)}
+.toast{max-width:calc(100% - 36px);font-size:13px;line-height:1.5}
+
+/* Dialogue stays readable without measuring actor layout on every frame. */
+#isleTalk{contain:layout style;pointer-events:none}
+.isle-tb{max-width:min(220px,calc(100vw - 32px));will-change:transform}
+.isle-tb .tb-in{padding:10px 13px;font-size:12px;font-weight:550;line-height:1.55;box-shadow:0 3px 12px rgba(28,52,40,.12);border:1px solid rgba(79,104,83,.12)}
+.isle-tb .tw{animation:none!important;opacity:1!important}
+html.isle-talk-on #homeStage .actor .bubble{display:none!important}
+.isle-tb.on{animation:none!important;opacity:1!important}
+.isle-tb.off{display:none!important}
+.isle-tb .tb-in::before{font-size:10px;font-weight:650}
+.isle-flash{display:none!important}
+.photo-capturing .l31-photo-bar{visibility:hidden!important}
+body.l31-photo #p-home :is(.hud-top,#hudRail,#fab,#qbag,#isleClock,#camFollow,#questCard),
+body.l31-photo .community-name{visibility:hidden!important;pointer-events:none!important}
+body.l31-photo #nav{visibility:hidden!important}
+html.scene-paused #homeStage *{animation-play-state:paused!important}
+.settings-quality{padding-bottom:12px}
+.settings-quality .seg button{font-size:12px;min-height:40px}
+.settings-quality .r-t small{font-size:12px}
+.app-build{font-variant-numeric:tabular-nums;color:var(--ink-2);font-size:12px;padding:18px 6px 4px}
+@media(max-width:360px){
+  #p-home .hud-top{right:76px;left:10px}#hudCap{padding-right:8px}#hudCap .cap-main{gap:4px}
+  #hudCap .cap-main .bar,#p-home.idle #hudCap .cap-main .bar{width:24px!important}
+  #isleClock{left:10px}#hudRail{right:10px}#nav.nav{left:8px!important;right:8px!important}
+  .phead h1{font-size:26px}.oc-grid{gap:9px!important}.oc-b{font-size:10px!important}
+}
+@media(max-height:540px){
+  #nav.nav{height:62px!important}#nav .nav-btn{height:50px!important;gap:2px!important}
+  #nav .nav-btn .nav-label{font-size:9px}#isleClock{top:calc(var(--sat) + 72px)}
+  #questCard{bottom:calc(var(--sab) + 80px)}#fab{bottom:calc(var(--sab) + 80px)}
+}
+html[data-motion=reduce] .isle-tb,html[data-motion=reduce] .sheet,html[data-motion=reduce] .ovp{transition:none!important}
+
+#sceneBackplate>.screen-sky{transition:none!important}

@@ -1,0 +1,99 @@
+{
+  "environment": {
+    "browser": "Chromium 154.0.8037.57",
+    "viewport": "412x892",
+    "deviceScaleFactor": 1,
+    "mobileTouch": true,
+    "cpuThrottle": 4,
+    "sampleSeconds": 10,
+    "note": "Desktop Chromium simulation, not on-device Android FPS; autonomous actions are nondeterministic."
+  },
+  "before": {
+    "frameMeanMs": 123.29,
+    "frameP95Ms": 166.7,
+    "over50ms": 88,
+    "over100ms": 55,
+    "metrics": {
+      "TaskDuration": 10.7744,
+      "ScriptDuration": 0.6974,
+      "LayoutDuration": 0.3088,
+      "RecalcStyleDuration": 1.8812,
+      "LayoutCount": 113,
+      "RecalcStyleCount": 127
+    }
+  },
+  "after": {
+    "frameMeanMs": 24.01,
+    "frameP95Ms": 50,
+    "over50ms": 16,
+    "over100ms": 1,
+    "metrics": {
+      "TaskDuration": 9.4189,
+      "ScriptDuration": 1.8235,
+      "LayoutDuration": 0.321,
+      "RecalcStyleDuration": 2.1972,
+      "LayoutCount": 202,
+      "RecalcStyleCount": 440
+    }
+  },
+  "scenarioMeasurements": {
+    "scenarios": [
+      {
+        "scenario": "normal",
+        "cpuThrottle": 1,
+        "meanMs": 16.83,
+        "p95Ms": 16.7,
+        "samples": 296,
+        "animations": 7
+      },
+      {
+        "scenario": "night",
+        "cpuThrottle": 4,
+        "meanMs": 20.26,
+        "p95Ms": 33.4,
+        "samples": 246,
+        "animations": 17
+      },
+      {
+        "scenario": "storm",
+        "cpuThrottle": 4,
+        "meanMs": 24.39,
+        "p95Ms": 50,
+        "samples": 205,
+        "animations": 18
+      },
+      {
+        "scenario": "snow",
+        "cpuThrottle": 4,
+        "meanMs": 21.01,
+        "p95Ms": 33.4,
+        "samples": 238,
+        "animations": 37
+      },
+      {
+        "scenario": "8-residents",
+        "cpuThrottle": 4,
+        "meanMs": 34.85,
+        "p95Ms": 66.6,
+        "residents": 8
+      }
+    ],
+    "errors": []
+  },
+  "finalUnthrottled": {
+    "seconds": 5.02,
+    "cpuThrottle": 1,
+    "viewport": "412x892",
+    "samples": 300,
+    "meanMs": 16.67,
+    "p95Ms": 16.8,
+    "over50ms": 0,
+    "durations": {
+      "TaskDuration": 1.3653,
+      "ScriptDuration": 0.2903,
+      "LayoutDuration": 0.022,
+      "RecalcStyleDuration": 0.3362
+    },
+    "dom": 3761
+  }
+}
