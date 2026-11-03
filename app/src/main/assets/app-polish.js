@@ -299,12 +299,26 @@
     app.syncSuspension();
   }
 
+  // The fog overlay is a full-screen surface; skip painting it when clear.
+  function installAtmosphere() {
+    const layer = document.getElementById('sceneAtmosphere');
+    if (!layer || typeof Env === 'undefined') return;
+    const paint = Env.paint;
+    Env.paint = function () {
+      const result = paint.apply(this, arguments);
+      const fog = parseFloat(layer.style.getPropertyValue('--fog')) || 0;
+      if (layer.classList.contains('is-clear') !== fog < .01) layer.classList.toggle('is-clear', fog < .01);
+      return result;
+    };
+    Env.dirty = 1;
+  }
+
   const ready = setInterval(() => {
     if (!window.P32Ready || !window.L31 || !Home.stage) return;
     clearInterval(ready);
     const ground = window.IsleGround?.g;
     if (ground) groundTexture = new GroundTexture(ground);
-    installDialogue(); installSettings(); installNavigation(); installSuspension();
+    installDialogue(); installSettings(); installNavigation(); installSuspension(); installAtmosphere();
     app.ready = true;
   }, 100);
 })();

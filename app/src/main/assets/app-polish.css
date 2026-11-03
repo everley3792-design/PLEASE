@@ -24,7 +24,16 @@ button:disabled{cursor:default}
 
 /* Keep a stable camera surface. Repeated layer promotion caused WebView flashes. */
 #homeStage .oc-cam-plane{backface-visibility:visible!important;-webkit-backface-visibility:visible!important;will-change:auto!important}
-.orb{will-change:auto}.cd{will-change:transform}
+.orb{will-change:auto}.cd{will-change:auto}
+/* Stable layer tree: elements that move or animate every few seconds keep one
+   permanent layer. Without this, overlap layers were created and destroyed
+   several times a second as characters walked past props or squashed, which
+   Android WebView shows as flashing tiles. */
+#worldProps>:is(.isle-prop,.rm-it,.gr-it,.l29-prop,.l30-sand){will-change:transform}
+#homeStage .actor :is(.a-squash,.mood,.community-name,.bubble){will-change:transform}
+html:not([data-quality=full]) .orb::after{animation:none!important}
+.qc-t{transition:none!important}
+#sceneAtmosphere.is-clear{visibility:hidden}
 .ground-texture{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;object-fit:fill;display:block}
 .ground-texture[hidden]{display:none!important}
 #homeStage .actor .a-shadow{will-change:transform}

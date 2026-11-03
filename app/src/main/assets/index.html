@@ -794,10 +794,10 @@ button{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 .stage.pv .orb.moon{width:36px;height:36px}
 @keyframes orbp{50%{transform:scale(1.12);opacity:.06}}
 .cl,.fog,.glow,.ffly,.shade,.wfx,.flash{inset:0;pointer-events:none}
-.cd{position:absolute;left:0;top:0;will-change:transform,opacity;transition:opacity 1.6s}
+.cd{position:absolute;left:0;top:0;transition:opacity 1.6s}
 .cd svg{display:block;overflow:visible}
-.rb{left:50%;top:7%;width:min(125%,560px);transform:translateX(-50%);opacity:0;transition:opacity 4s;pointer-events:none}
-.rb.on{opacity:.9}.rb svg{display:block;width:100%}
+.rb{left:50%;top:7%;width:min(125%,560px);transform:translateX(-50%);opacity:0;visibility:hidden;transition:opacity 4s,visibility 0s 4s;pointer-events:none}
+.rb.on{opacity:.9;visibility:visible;transition:opacity 4s}.rb svg{display:block;width:100%}
 .glow{z-index:2;opacity:var(--gw,0);background:radial-gradient(ellipse 95% 42% at var(--gx,50%) 48%,var(--orb-glow),transparent 72%)}
 .fog{z-index:2;opacity:var(--fog,0);background:linear-gradient(180deg,var(--fogc,transparent),var(--fogc2,transparent))}
 .fog i{position:absolute;inset:-8% -35%;background:radial-gradient(ellipse 30% 14% at 22% 62%,var(--fogc2),transparent 70%),radial-gradient(ellipse 34% 12% at 72% 48%,var(--fogc2),transparent 70%),radial-gradient(ellipse 28% 12% at 48% 78%,var(--fogc2),transparent 70%);animation:fogm 46s ease-in-out infinite alternate}
@@ -2202,15 +2202,24 @@ const thumbHTML=c=>`<div class="thumb"><div class="art"><div class="adj">${artHT
 /* ==========================================================
    舞台引擎（Stage）
    ========================================================== */
-const Ticker={set:new Set(),raf:0,last:0,
+/* One shared frame loop. Updates run on whole display frames: 60 Hz screens
+   update every frame, 90 Hz every frame, 120/144 Hz every second frame
+   (battery: ~30 updates/s). Time-based skipping caused uneven 45 fps cadence
+   on 90 Hz panels and random dropped updates from vsync jitter on 60 Hz. */
+const Ticker={set:new Set(),raf:0,last:0,prev:0,frame:0,step:1,deltas:[],
   add(s){this.set.add(s);this.kick()},del(s){this.set.delete(s)},
-  kick(){if(!this.paused&&!this.raf&&this.set.size&&!document.hidden){this.last=performance.now();this.raf=requestAnimationFrame(this.loop)}},
+  kick(){if(!this.paused&&!this.raf&&this.set.size&&!document.hidden){this.last=0;this.prev=0;this.raf=requestAnimationFrame(this.loop)}},
+  pace(d){if(d<4||d>40)return;const a=this.deltas;a.push(d);if(a.length>40)a.shift();if(a.length<12||this.frame%20)return;
+    const median=[...a].sort((x,y)=>x-y)[a.length>>1],target=document.documentElement.dataset.quality==='battery'?1000/30:1000/60;
+    this.step=Math.max(1,Math.floor(target/median+.25))},
+  visible(item){if(item===Home.stage)return typeof Nav==='undefined'||Nav.cur===0;
+    const root=item instanceof Stage&&item.root;if(!root)return true;const page=root.closest('.page');return !page||page.classList.contains('on')},
   loop(t){const T=Ticker;T.raf=0;if(T.paused||document.hidden)return;
-    const interval=document.documentElement.dataset.quality==='battery'?1000/30:1000/60;
-    if(t-T.last<interval-.6){if(T.set.size&&!document.hidden)T.raf=requestAnimationFrame(T.loop);return}
-    const dt=Math.min(.05,(t-T.last)/1000);T.last=t;
+    T.frame++;if(T.prev)T.pace(t-T.prev);T.prev=t;
+    if(T.last&&T.frame%T.step){if(T.set.size)T.raf=requestAnimationFrame(T.loop);return}
+    const dt=T.last?Math.min(.05,Math.max(.001,(t-T.last)/1000)):1/60;T.last=t;
     const C=window.OCSCommunity,ownsHome=!!(C?.ready&&C.active());
-    for(const item of T.set){if(ownsHome&&item===Home.stage)continue;item.update(dt)}
+    for(const item of T.set){if(ownsHome&&item===Home.stage||!T.visible(item))continue;item.update(dt)}
     if(T.set.size&&!document.hidden)T.raf=requestAnimationFrame(T.loop)}};
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden){cancelAnimationFrame(Ticker.raf);Ticker.raf=0}
@@ -2749,8 +2758,10 @@ const Home={stage:null,vis:true,
     const cap=$('#hudCap');let ct=0;cap.addEventListener('click',e=>{if(e.target.closest('.res'))return;const o=cap.classList.toggle('open');cap.setAttribute('aria-expanded',o);clearTimeout(ct);if(o)ct=setTimeout(()=>cap.classList.remove('open'),6000);buzz(6)});
     const pg=$('#p-home'),appEl=$('#app'),rail=$('#hudRail');let it=0;
     const closeAll=()=>{fab.classList.remove('open');rail.classList.remove('open');cap.classList.remove('open');$('#qaToggle').setAttribute('aria-expanded','false');$('[data-go=toggle]',rail).setAttribute('aria-expanded','false');cap.setAttribute('aria-expanded','false')};
-    const wake=()=>{pg.classList.remove('idle');appEl.classList.remove('hud-idle');clearTimeout(it);
-      it=setTimeout(()=>{if($('.sheet.open')||$('.ovp.open')||$('#hudRail.open')||$('#fab.open')||$('#l31Quick'))return;pg.classList.add('idle');appEl.classList.add('hud-idle')},5200)};
+    // The HUD keeps a fixed, fully opaque footprint. Toggling idle classes on
+    // #app restyled the whole document after every first touch and faded HUD
+    // elements in and out, which read as flicker.
+    const wake=()=>{if(it)return;it=1;pg.classList.remove('idle');appEl.classList.remove('hud-idle')};
     addEventListener('pointerdown',wake,true);wake();
     $$('.res').forEach(b=>b.onclick=()=>HUD.resTap(b.dataset.r));
     setInterval(()=>HUD.tick(),20000)},
@@ -3172,20 +3183,25 @@ paint(){const s=this.s,p=this.pal(s.h),g=s.gr,fg=s.fog,sn=s.snow,L=p.lum*(1-.12*
 fx(e,dt,rm){const s=this.s,r=e.r,W=e.stage.W||r.clientWidth,H=e.stage.H||r.clientHeight,quality=document.documentElement.dataset.quality,detail=quality==='full'?1:quality==='battery'?.4:.65,dpr=Math.min(window.devicePixelRatio||1,quality==='full'?1.5:1),xt=e.ext||0,ex=Math.round(W*xt),ey=Math.round(H*xt),ks=(1+2*xt)*(1+xt);
  if(e.W!==W||e.H!==H){const first=!e.W;e.W=W;e.H=H;e.cv.width=(W+2*ex)*dpr;e.cv.height=(H+2*ey)*dpr;e.cx.setTransform(dpr,0,0,dpr,ex*dpr,ey*dpr);if(xt&&first)e.clouds.forEach(c=>c.x=rn(-ex-c.w,W+ex));const f=r.querySelector('.floor');e.fh=f?f.offsetHeight:90;e.dr.length=0;e.fk.length=0}
  const wd=.35+s.wind;
+ // Clouds drift at the weather-effect rate as plain transforms. Compositor
+ // animations here promoted every hill, floor and prop painted after them into
+ // separate GPU layers (several screens of overdraw, and layer flashes on Android).
+ const still=rm||quality==='battery',clock=performance.now();
  for(const c of e.clouds){
-  const visible=Number(c.el.style.opacity)>.01;
-  if(!visible||rm||document.documentElement.dataset.quality==='battery'){c.motion?.pause();continue}
-  const key=W+'|'+H;
-  if(!c.motion||c.motionKey!==key){
-   c.motion?.cancel();const start=-ex-c.w-20,end=W+ex+20,duration=(end-start)/Math.max(1,c.sp)*1000;
-   c.motion=c.el.animate([{transform:`translate3d(${start}px,0,0)`},{transform:`translate3d(${end}px,0,0)`}],{duration,iterations:Infinity});
-   c.motion.currentTime=((c.x-start)/(end-start))*duration;c.motionKey=key;
-  }
-  if(c.motion.playState==='paused')c.motion.play();
-  if(Math.abs(c.motion.playbackRate-wd)>.05)c.motion.updatePlaybackRate(wd);
+  if(!(Number(c.el.style.opacity)>.01)){
+   // Leave the render tree once the 1.6 s fade-out has finished.
+   if(!c.off){c.offAt??=clock;if(clock-c.offAt>1800){c.off=true;c.el.style.visibility='hidden'}}
+   continue}
+  c.offAt=null;if(c.off){c.off=false;c.el.style.visibility=''}
+  const start=-ex-c.w-20,end=W+ex+20;
+  if(!still){c.x+=Math.max(1,c.sp)*wd*dt;if(c.x>end||c.x<start)c.x=start}
+  const tr=`translate(${c.x.toFixed(1)}px,0)`;if(c.tr!==tr){c.tr=tr;c.el.style.transform=tr}
  }
  e.rb.classList.toggle('on',this.rbT>0);
- const cx=e.cx,act=s.rain>.02||s.snow>.02||e.rp.length||e.bolt;if(!act){if(e.drew){cx.clearRect(-ex,-ey,W+2*ex,H+2*ey);e.drew=0}return}
+ const cx=e.cx,act=s.rain>.02||s.snow>.02||e.rp.length||e.bolt;
+ // An idle, transparent canvas larger than the screen still costs a full GPU layer.
+ if(!act){if(e.drew){cx.clearRect(-ex,-ey,W+2*ex,H+2*ey);e.drew=0}if(e.cv.style.display!=='none')e.cv.style.display='none';return}
+ if(e.cv.style.display)e.cv.style.display='';
  e.drew=1;cx.clearRect(-ex,-ey,W+2*ex,H+2*ey);const g0=H-e.fh*.82,g1=H-e.fh*.16;
  if(s.rain>.02){const n=Math.min(Math.round((rm?40:120)*ks),Math.round(s.rain*78*ks*detail)),sl=.18+s.wind*.22;cx.strokeStyle=`rgba(205,225,246,${.3+.18*Math.min(1,s.rain)})`;cx.lineWidth=1.2;cx.beginPath();
   const nd=(d,init)=>{d.x=rn(-30-ex,W+60+ex);d.gy=rn(g0,g1);d.y=init?rn(-20-ey,d.gy):rn(-80-ey,-10-ey);d.v=rn(560,780)*(1+s.th*.35);d.l=rn(9,16);return d};
@@ -7133,13 +7149,16 @@ const C=window.OCSCommunity={version:'2.5C',nodes:new Map(),events:new Map(),loc
  baseSize(){return clamp(this.W*.29,92,144)*Cfg.v.size/100},
  footprint(n){return {x:n.s.size*.27,y:n.s.size*.105}},
  geometry(n){const s=n.s;const key=[this.W,this.H,n.x.toFixed(5),n.y.toFixed(5),n.seat?.p.u,n.seat?.p.s,n.seat?.kind,n.facing,Cfg.v.size,s.ch?.id,s.ch?.scale,s.ch?.oy,s===Home.stage].join('|');if(n.geometryKey===key)return;n.geometryKey=key;s.W=this.W;s.H=this.H;s.size=this.baseSize()*this.scale(n.y);s.minX=this.bounds().left*this.W-s.size*.5;s.maxX=this.bounds().right*this.W-s.size*.5;s.x=n.x*this.W-s.size/2;s.feetY=n.y*this.H;s.calcSpots();
-  const z=String(Math.round((n.y+(n.seat?.001:0))*10000)*16+n.order);if(s.actor.style.zIndex!==z)s.actor.style.zIndex=z;
+  // Depth is quantised to ~2 px of ground so walking does not restyle and
+  // re-layer the actor on every frame; props use the same y*10000*16 scale.
+  const zy=Math.round(n.y*500)/500,z=String(Math.round((zy+(n.seat?.001:0))*10000)*16+n.order),sz=String(Math.round(zy*10000)*16+n.order-1);
+  if(s.actor.style.zIndex!==z)s.actor.style.zIndex=z;if(s.shadow.style.zIndex!==sz)s.shadow.style.zIndex=sz;
   
   s.phase=Home.stage.phase;const lift=n.seat?OCS24D.Room.width(n.seat.p)*(n.seat.kind==='bed'?.18:.27):0;
   s._seatLift=lift;
   const rasterSize=Math.round(s.size);if(n.rasterSize!==rasterSize){n.rasterSize=rasterSize;s.actor.style.setProperty('--asz',rasterSize+'px');s.shadow.style.setProperty('--asz',rasterSize+'px')}
   if(s.actor.style.top!=='0px'){s.actor.style.top='0px';s.actor.style.bottom='auto';s.shadow.style.top='0px';s.shadow.style.bottom='auto'}
-  s.actor.style.translate='';s.shadow.style.translate='';s.actor.style.zIndex=String(Math.round((n.y+(n.seat?.001:0))*10000)*16+n.order);s.shadow.style.zIndex=String(Math.round(n.y*10000)*16+n.order-1);
+  if(s.actor.style.translate)s.actor.style.translate='';if(s.shadow.style.translate)s.shadow.style.translate='';
   if(s.actor.dataset.depth!==(n.facing||'front'))s.actor.dataset.depth=n.facing||'front';s.actor.classList.toggle('community-focused',s===Home.stage);s.metrics();s.lastRender=''},
  metrics(s){const c=s.ch;if(!c)return;const key=[c.id,c.url,c.scale,c.oy,c.w,c.h,s.size.toFixed(3)].join('|');if(s.communityMetricKey===key)return;s.communityMetricKey=key;const demo=!c.url,fh=demo?.97:Math.min(1,(c.h||1)/(c.w||1));s.hitTop=Math.max(30,s.size*fh*c.scale-s.size*c.oy/100);const top=Math.round(Math.max(24,s.hitTop-8))+'px';if(s.actor.style.getPropertyValue('--btop')!==top)s.actor.style.setProperty('--btop',top);const shadow=demo?'.6':'.5';if(s.shadow.style.getPropertyValue('--shw')!==shadow)s.shadow.style.setProperty('--shw',shadow)},
  spawn(ch,index,main){let s;if(main)s=Home.stage;else{const root=document.createElement('div');s=new Stage(root,{auto:true,size:()=>this.baseSize()});s.ro.disconnect();clearInterval(s.phT);s.phT=null;Env.st.delete(s);Env.rt=Env.rt.filter(e=>e.stage!==s);s.setPhase=function(){this.phase=Home.stage.phase};s._lb=1;s.root=Home.stage.root;s._community=true;s.measure=()=>{};s.setChar(ch,false);this.world.append(s.shadow,s.actor,s.fx);s.actor.classList.add('community-guest');s.fx.classList.add('community-fx');}
