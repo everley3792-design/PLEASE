@@ -203,3 +203,7 @@ html[data-motion=reduce] .isle-tb,html[data-motion=reduce] .sheet,html[data-moti
   .l31-q{top:calc(var(--sat) + 12px)!important;left:auto!important;right:80px;width:min(300px,calc(100% - 100px))!important}
   #l31Quick{max-height:calc(100% - var(--sat) - var(--sab) - 12px - 82px)}
 }
+/* The open bag drawer covers the camera-follow button instead of being
+   covered by it (it blocked the third item). */
+#p-home #qbag.open{z-index:21}
+#p-home:has(#qbag.open) #camFollow{visibility:hidden;pointer-events:none}

@@ -236,7 +236,9 @@
       if (ring) { ring.click(); return true; }
       const quick = document.querySelector('#l31Quick [data-close2]');
       if (quick) { quick.click(); return true; }
-      for (const [container, selector] of [['hudRail', '[data-go="toggle"]'], ['fab', '#qaToggle'], ['qbag', '#qbFab']]) {
+      const cap = document.getElementById('hudCap');
+      if (cap?.classList.contains('open')) { cap.classList.remove('open'); cap.setAttribute('aria-expanded', 'false'); return true; }
+      for (const [container, selector] of [['hudRail', '[data-go="toggle"]'], ['fab', '#qaToggle'], ['qbag', '#qbX']]) {
         const node = document.getElementById(container);
         if (node?.classList.contains('open')) { node.querySelector(selector)?.click(); return true; }
       }
