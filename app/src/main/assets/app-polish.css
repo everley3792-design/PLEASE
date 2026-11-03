@@ -196,3 +196,10 @@ html[data-motion=reduce] .isle-tb,html[data-motion=reduce] .sheet,html[data-moti
 /* Pressed feedback without layout or layer changes. */
 #nav .nav-btn:active svg{opacity:.7}
 .qa-pill:active,.rail-btn:active,#homeChip:active,#isleClock:active,#questCard:active{filter:brightness(.96)}
+/* The companion quick card never runs under the navigation bar. */
+#l31Quick{max-height:calc(100% - var(--sat) - var(--sab) - 128px - 96px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}
+#l31Quick::-webkit-scrollbar{display:none}
+@media(max-height:540px){
+  .l31-q{top:calc(var(--sat) + 12px)!important;left:auto!important;right:80px;width:min(300px,calc(100% - 100px))!important}
+  #l31Quick{max-height:calc(100% - var(--sat) - var(--sab) - 12px - 82px)}
+}

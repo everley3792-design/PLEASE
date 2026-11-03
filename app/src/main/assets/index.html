@@ -3209,7 +3209,9 @@ fx(e,dt,rm){const s=this.s,r=e.r,W=e.stage.W||r.clientWidth,H=e.stage.H||r.clien
   c.offAt=null;if(c.off){c.off=false;c.el.style.visibility=''}
   const start=-ex-c.w-20,end=W+ex+20;
   if(!still){c.x+=Math.max(1,c.sp)*wd*dt;if(c.x>end||c.x<start)c.x=start}
-  const tr=`translate(${c.x.toFixed(1)}px,0)`;if(c.tr!==tr){c.tr=tr;c.el.style.transform=tr}
+  // Half-pixel steps (one device pixel on phones): clouds drift 1-8 px/s, so
+  // most ticks need no repaint at all.
+  const tr=`translate(${(Math.round(c.x*2)/2).toFixed(1)}px,0)`;if(c.tr!==tr){c.tr=tr;c.el.style.transform=tr}
  }
  e.rb.classList.toggle('on',this.rbT>0);
  const cx=e.cx,act=s.rain>.02||s.snow>.02||e.rp.length||e.bolt;
@@ -5828,7 +5830,11 @@ const Dress={k:'ocs.dress.v1',d:null,stages:new Set(),
  ensure(st){const a=st.art;if(!a)return null;let b=a.querySelector(':scope>.dr-b'),f=a.querySelector(':scope>.dr-f');
   if(!b){b=el('<div class="dr-layer dr-b"><i class="dr-mk" style="position:absolute;left:0;top:0"></i></div>');a.insertBefore(b,a.firstChild)}
   if(!f){f=el('<div class="dr-layer dr-f"></div>');a.append(f)}return{b,f}},
- fl(st){const b=st.art&&st.art.querySelector(':scope>.dr-b'),mk=b&&b.querySelector('.dr-mk');if(!mk)return false;const m=mk.getBoundingClientRect(),r=b.getBoundingClientRect();return m.left>r.left+r.width/2},
+ fl(st){const b=st.art&&st.art.querySelector(':scope>.dr-b'),mk=b&&b.querySelector('.dr-mk');if(!mk)return false;
+  // Mirroring comes from the scaleX written by Stage.render; reading it avoids a
+  // forced layout on every accessory sync. Measure only if it is not set.
+  const t=/scaleX\((-?[\d.]+)\)/.exec(st.flip?.style.transform||'');if(t)return parseFloat(t[1])<0;
+  const m=mk.getBoundingClientRect(),r=b.getBoundingClientRect();return m.left>r.left+r.width/2},
  key(st){if(Ed.on&&Ed.st===st)return Ed.pk||'';return st.sleeping&&st.sleeping()?'sleep':st.B&&st.B.id==='sit'?'sit':st.state==='walk'?'walk':(st.state==='hop'||st.state==='crouch'||st.state==='fall')?'hop':''},
  off(w,k,f){const o=w.o;return o?(o[k+(f?'~':'')]||o[k]||null):null},
  sync(st,list,sel,pop){if(!st||!st.ch)return;const L=this.ensure(st);if(!L)return;list=list||this.worn(st.ch.id);
