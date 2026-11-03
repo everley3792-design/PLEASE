@@ -16,3 +16,5 @@ keystore.properties
 # User exports
 *.ocbackup.json
 *.ocpack.json
+# Shared, non-secret debug key so every debug build can update the last one.
+!app/debug.keystore

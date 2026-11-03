@@ -118,7 +118,7 @@
 
   function syncTheme() {
     const meta = document.querySelector('meta[name="theme-color"]');
-    bridge.setTheme(meta?.content || '#F4F2EC', document.documentElement.dataset.theme === 'dark');
+    bridge.setTheme(meta?.content || '#F5F3EB', document.documentElement.dataset.theme === 'dark');
   }
   new MutationObserver(syncTheme).observe(document.documentElement, {
     attributes: true, attributeFilter: ['data-theme']

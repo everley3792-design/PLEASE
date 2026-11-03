@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<meta name="theme-color" content="#F4F2EC">
+<meta name="theme-color" content="#F5F3EB">
 <meta name="color-scheme" content="light dark">
 <title>OC Shimeji｜我的夥伴小世界</title>
 <script src="runtime-core.js"></script>
@@ -13,7 +13,7 @@
 var d=t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);
 var r=document.documentElement;r.dataset.theme=d?'dark':'light';
 var m=s.motion||'system';r.dataset.motion=(m==='reduce'||(m==='system'&&matchMedia('(prefers-reduced-motion: reduce)').matches))?'reduce':'full';
-document.querySelector('meta[name=theme-color]').content=d?'#202C38':'#F4F2EC'}catch(e){}})();
+document.querySelector('meta[name=theme-color]').content=d?'#1A2530':'#F5F3EB'}catch(e){}})();
 </script>
 <style>
 /* ==========================================================
@@ -1778,7 +1778,7 @@ const buzz=ms=>{if(Cfg.v.haptics&&navigator.vibrate)try{navigator.vibrate(ms)}ca
 const Theme={
   mq:matchMedia('(prefers-color-scheme: dark)'),rm:matchMedia('(prefers-reduced-motion: reduce)'),
   resolve(){const t=Cfg.v.theme;return t==='system'?(this.mq.matches?'dark':'light'):t},
-  syncChrome(d=document.documentElement.dataset.theme){const meta=$('meta[name=theme-color]'),color=d==='dark'?'#202C38':'#F4F2EC';if(meta&&meta.content!==color)meta.content=color},
+  syncChrome(d=document.documentElement.dataset.theme){const meta=$('meta[name=theme-color]'),color=d==='dark'?'#1A2530':'#F5F3EB';if(meta&&meta.content!==color)meta.content=color},
   apply(){const d=this.resolve(),r=document.documentElement;r.dataset.theme=d;this.syncChrome(d);
     const m=Cfg.v.motion;r.dataset.motion=(m==='reduce'||(m==='system'&&this.rm.matches))?'reduce':'full'},
   set(t,ev){Cfg.set('theme',t);this.syncChrome(this.resolve());const r=document.documentElement,same=this.resolve()===r.dataset.theme;
@@ -2206,17 +2206,30 @@ const thumbHTML=c=>`<div class="thumb"><div class="art"><div class="adj">${artHT
    update every frame, 90 Hz every frame, 120/144 Hz every second frame
    (battery: ~30 updates/s). Time-based skipping caused uneven 45 fps cadence
    on 90 Hz panels and random dropped updates from vsync jitter on 60 Hz. */
-const Ticker={set:new Set(),raf:0,last:0,prev:0,frame:0,step:1,deltas:[],
+/* Adaptive half rate: if update frames keep arriving late (the device cannot
+   finish a frame in time), switch to an even half-rate cadence instead of
+   erratic drops. Touch input restores the full rate immediately, and the
+   full rate is retried after a calm period. Never applies to full motion. */
+const Ticker={set:new Set(),raf:0,last:0,prev:0,frame:0,step:1,base:1,vsync:1000/60,deltas:[],late:[],changed:-1e9,boost:0,
   add(s){this.set.add(s);this.kick()},del(s){this.set.delete(s)},
-  kick(){if(!this.paused&&!this.raf&&this.set.size&&!document.hidden){this.last=0;this.prev=0;this.raf=requestAnimationFrame(this.loop)}},
-  pace(d){if(d<4||d>40)return;const a=this.deltas;a.push(d);if(a.length>40)a.shift();if(a.length<12||this.frame%20)return;
-    const median=[...a].sort((x,y)=>x-y)[a.length>>1],target=document.documentElement.dataset.quality==='battery'?1000/30:1000/60;
-    this.step=Math.max(1,Math.floor(target/median+.25))},
+  kick(){if(!this.paused&&!this.raf&&this.set.size&&!document.hidden){this.last=0;this.prev=0;this.late.length=0;this.raf=requestAnimationFrame(this.loop)}},
+  pace(d){if(d<4||d>100)return;const a=this.deltas;a.push(d);if(a.length>60)a.shift();if(a.length<15||this.frame%20)return;
+    const vsync=[...a].sort((x,y)=>x-y)[Math.floor(a.length*.15)],quality=document.documentElement.dataset.quality,target=quality==='battery'?1000/30:1000/60;
+    this.vsync=vsync;const base=Math.max(1,Math.floor(target/vsync+.25));if(base!==this.base){this.base=base;this.step=base;this.late.length=0}},
+  adapt(gap,now){const L=this.late;L.push(gap>this.step*this.vsync*1.35?1:0);if(L.length>36)L.shift();if(L.length<36)return;
+    const ratio=L.reduce((s,v)=>s+v,0)/L.length,full=document.documentElement.dataset.quality==='full';
+    if(this.step===this.base&&ratio>.45&&!full&&this.vsync*this.base<20){
+      // Falling back again soon after a retry: wait longer before the next retry.
+      this.calm=now-this.changed<(this.calm||8000)+4000?Math.min(120000,(this.calm||8000)*2):8000;
+      this.step=this.base*2;this.changed=now;L.length=0}
+    else if(this.step>this.base&&(full||ratio<.08&&now-this.changed>(this.calm||8000))){this.step=this.base;this.changed=now;L.length=0}},
   visible(item){if(item===Home.stage)return typeof Nav==='undefined'||Nav.cur===0;
     const root=item instanceof Stage&&item.root;if(!root)return true;const page=root.closest('.page');return !page||page.classList.contains('on')},
   loop(t){const T=Ticker;T.raf=0;if(T.paused||document.hidden)return;
     T.frame++;if(T.prev)T.pace(t-T.prev);T.prev=t;
-    if(T.last&&T.frame%T.step){if(T.set.size)T.raf=requestAnimationFrame(T.loop);return}
+    const step=t<T.boost?T.base:T.step;
+    if(T.last&&T.frame%step){if(T.set.size)T.raf=requestAnimationFrame(T.loop);return}
+    if(T.last&&step===T.step)T.adapt(t-T.last,t);
     const dt=T.last?Math.min(.05,Math.max(.001,(t-T.last)/1000)):1/60;T.last=t;
     const C=window.OCSCommunity,ownsHome=!!(C?.ready&&C.active());
     for(const item of T.set){if(ownsHome&&item===Home.stage||!T.visible(item))continue;item.update(dt)}
@@ -2225,6 +2238,7 @@ document.addEventListener('visibilitychange',()=>{
   if(document.hidden){cancelAnimationFrame(Ticker.raf);Ticker.raf=0}
   else Ticker.kick();
 });
+for(const type of ['pointerdown','pointermove','wheel'])addEventListener(type,()=>{Ticker.boost=performance.now()+900},{capture:true,passive:true});
 const PLANT='<svg viewBox="0 0 64 92" aria-hidden="true"><ellipse cx="32" cy="87" rx="21" ry="4" fill="#576C56" opacity=".12"/><path d="M32 59C18 48 9 34 11 16C28 19 34 38 32 59Z" fill="var(--leaf-a)"/><path d="M32 59C38 41 44 25 58 17C60 39 45 53 32 59Z" fill="var(--leaf-b)"/><path d="M32 59C24 43 26 26 33 15C41 30 40 45 32 59Z" fill="var(--leaf-c)"/><path d="M32 59C31 43 24 31 16 24M33 57C40 42 49 32 54 25" stroke="#ECF7E6" stroke-opacity=".35" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M15 61L49 61L45 86Q32 92 20 86Z" fill="var(--pot)"/><path d="M33 63L49 63L45 86L34 89Z" fill="#927865" opacity=".17"/><path d="M13 60Q32 56 51 60L49 68Q32 71 15 67Z" fill="var(--pot-rim)"/><path d="M15 60Q32 57 49 60" fill="none" stroke="#FFF4E6" stroke-opacity=".45" stroke-width="2"/></svg>';
 const SCENE_TREE=(x,y,scale=1,tone=0)=>`<g transform="translate(${x} ${y}) scale(${scale})" class="scene-tree"><ellipse cx="0" cy="3" rx="25" ry="5" fill="#5D795F" opacity=".14"/><g class="sw s${(Math.round(x)%3)+1}"><path d="M-5-1L-5-31L6-31L6 0Q0 3-5-1Z" fill="var(--wood)"/><path d="M-5-24L-5-31L2-31L2-2L-5-1Z" fill="#FFF1CC" opacity=".16"/><path d="M-29-43Q-27-64-18-75L-7-96Q-2-101 5-96L21-76Q32-65 29-42L19-29Q0-21-21-31Z" fill="var(--tree-a)"/><path d="M2-97L21-76Q32-65 29-42L19-29Q5-24-1-26L-1-55Z" fill="var(--tree-b)"/><path d="M-27-43Q-23-58-11-72L-3-92L-1-55L-15-36Z" fill="#E7EFD3" opacity=".31"/><path d="M-1-55L17-72L26-49L12-37L-1-26Z" fill="#436E62" opacity=".14"/><path d="M-19-33Q0-22 19-32" fill="none" stroke="#4D7963" stroke-opacity=".18" stroke-width="2" stroke-linecap="round"/></g></g>`;
 const SCENE_BUSH=(x,y,scale=1)=>`<g transform="translate(${x} ${y}) scale(${scale})"><ellipse cx="1" cy="1" rx="31" ry="5" fill="#607B60" opacity=".11"/><path d="M-27 0Q-28-15-16-20Q-13-31 1-27Q9-30 18-21Q29-19 29-5L25 0Z" fill="var(--bush)"/><path d="M0-27Q16-30 18-21Q29-19 29-5L25 0L0 0Z" fill="var(--tree-b)" opacity=".45"/><path d="M-24-10Q-18-23-5-23L-3-16Q-15-15-21-4Z" fill="#F5F4CF" opacity=".23"/></g>`;
@@ -3172,7 +3186,7 @@ paint(){const s=this.s,p=this.pal(s.h),g=s.gr,fg=s.fog,sn=s.snow,L=p.lum*(1-.12*
   if(!e.r.isConnected)continue;
   const st=e.r.style,Q=window.P32Q,R=window.P32R;for(const k in vars){if(R&&R(e,k,vars[k]))continue;const o=st.getPropertyValue(k),v=Q&&o?Q(o,vars[k]):vars[k];if(o!==v)st.setProperty(k,v)}
   const half=night?(e.pv?18:28):(e.pv?23:37);e.orb.classList.toggle('moon',night);{
-    const positionX=`calc(${x.toFixed(2)}% - ${half}px)`,positionY=`calc(var(--sat,0px) + ${y.toFixed(2)}%)`,opacity=orbA.toFixed(3),gx=x.toFixed(1)+'%';
+    const positionX=`calc(${x.toFixed(2)}% - ${half}px)`,positionY=e.r.id==='homeStage'?`calc(var(--sat,0px) + 132px + ${(y*.62).toFixed(2)}%)`:`calc(var(--sat,0px) + ${y.toFixed(2)}%)`,opacity=orbA.toFixed(3),gx=x.toFixed(1)+'%';
     if(e.orb.style.left!==positionX)e.orb.style.left=positionX;
     if(e.orb.style.top!==positionY)e.orb.style.top=positionY;
     if(e.orb.style.opacity!==opacity)e.orb.style.opacity=opacity;
@@ -5415,7 +5429,9 @@ Taste.hydrate=function(){Chars.list.forEach(ch=>{try{const src=ch.kind==='demo'?
  const btn=k=>nav.querySelector(SEL[k]),lab=k=>(btn(k).getAttribute('aria-label')||k);
  let st={order:DEF.slice(),hide:EXTRA.slice(),lab:true,ver:3};try{const o=JSON.parse(localStorage.getItem(K));if(o&&Array.isArray(o.order)){const od=[...new Set(o.order.filter(k=>DEF.includes(k)))];DEF.forEach(k=>{if(!od.includes(k))od.push(k)});st={order:od,lab:o.ver>=3?!!o.lab:true,ver:3,hide:[...new Set((Array.isArray(o.hide)?o.hide:[]).concat(o.ver>=2?[]:EXTRA))].filter(k=>DEF.includes(k)&&!LOCK[k])}}}catch(e){}
  const save=()=>{try{localStorage.setItem(K,JSON.stringify(st))}catch(e){}};
- const place=()=>{const b=nav.querySelector('.nav-btn.on:not(.nx-off)');if(!b||!b.offsetWidth){ind.style.opacity='0';return}ind.style.opacity='';ind.style.transform='none';ind.style.left=b.offsetLeft+'px';ind.style.width=b.offsetWidth+'px'};
+ // The sliding indicator is replaced by the active-button highlight (app-polish.css).
+ // Measuring it forced a full synchronous layout of the incoming page on every tab tap.
+ const place=()=>{};
  const apply=()=>{st.order.forEach(k=>{const b=btn(k);if(b)nav.append(b)});let n=0;DEF.forEach(k=>{const off=st.hide.includes(k);btn(k).classList.toggle('nx-off',off);if(!off)n++});nav.style.setProperty('--n',n);nav.classList.toggle('nx-few',n<6);nav.classList.toggle('nx-lab',!!st.lab);requestAnimationFrame(place)};
  const Nv=window.Nav||(typeof Nav!=='undefined'?Nav:null);
  if(typeof Nav!=='undefined'){const g=Nav.go;Nav.go=function(){const r=g.apply(this,arguments);place();return r}}

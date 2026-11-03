@@ -10,11 +10,26 @@ android {
         applicationId = "com.ocshimeji.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 30202
-        versionName = "3.2.2"
+        versionCode = 30300
+        versionName = "3.3.0"
+    }
+
+    signingConfigs {
+        // Shared debug key (password "android"): debug APKs from any machine or
+        // GitHub Actions run can be installed over each other without losing data.
+        // Never use it for release builds.
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
     }
 
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("debug")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")

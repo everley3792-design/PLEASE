@@ -184,3 +184,15 @@ html.scene-paused #homeStage *{animation-play-state:paused!important}
 html[data-motion=reduce] .isle-tb,html[data-motion=reduce] .sheet,html[data-motion=reduce] .ovp{transition:none!important}
 
 #sceneBackplate>.screen-sky{transition:none!important}
+
+/* 3.3 polish ------------------------------------------------------------- */
+/* Containers receive programmatic focus when opened; a ring around a whole
+   sheet looked like a broken frame. Controls inside keep their focus ring. */
+#layer>.sheet:focus,#layer>.sheet:focus-visible,.ovp:focus,.ovp:focus-visible,
+#l31Quick:focus-visible,[tabindex="-1"]:focus-visible{outline:none!important}
+/* Active navigation icon used the old yellow-tab ink colour (brown on mint). */
+#nav .nav-btn.on svg,#nav .nav-btn.on span[data-ic]{color:var(--accent)!important}
+#nav .nav-btn svg{transition:none}
+/* Pressed feedback without layout or layer changes. */
+#nav .nav-btn:active svg{opacity:.7}
+.qa-pill:active,.rail-btn:active,#homeChip:active,#isleClock:active,#questCard:active{filter:brightness(.96)}

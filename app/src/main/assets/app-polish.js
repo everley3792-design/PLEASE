@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const html = document.documentElement;
-  const app = window.OCPolish = { version: '3.2.2', ready: false };
+  const app = window.OCPolish = { version: '3.3.0', ready: false };
   let nativeForeground = true;
   const pausedAnimations = new Set();
   let groundTexture;
@@ -211,7 +211,7 @@
       const control = mkSeg([{v:'balanced',t:'流暢'},{v:'battery',t:'省電'},{v:'full',t:'完整動態'}], html.dataset.quality, app.setQuality);
       control.style.margin = '0 12px'; group.append(control);
       this.body.prepend(section, group);
-      this.body.append(el('<div class="app-build">OC Shimeji 3.2.2 · 本機自動保存</div>'));
+      this.body.append(el('<div class="app-build">OC Shimeji 3.3.0 · 本機自動保存</div>'));
       return result;
     };
     Settings.make();

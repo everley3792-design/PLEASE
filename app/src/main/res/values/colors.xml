@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Same colours as the page background, so launch has no colour jump. -->
+    <color name="app_background">#F5F3EB</color>
+    <color name="app_accent">#347E6C</color>
+</resources>
