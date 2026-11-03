@@ -1,51 +1,49 @@
-# 3.2.2 驗證紀錄
+# 3.3.0 驗證紀錄
 
 驗證日期：2026-11-03。
 
 ## Android 建置
 
-- JDK 17、Android SDK 35、Build Tools 35.0.0、Gradle 8.11.1。
-- `assembleDebug lintDebug`：**BUILD SUCCESSFUL**。
-- Lint：**0 errors、3 warnings**。剩餘提示為固定版 AndroidX 可升級，以及 API 33 返回屬性在舊版系統會忽略；返回處理有版本判斷。
-- APK 通過 `apksigner verify`。版本 3.2.2、versionCode 30202、minSdk 26、targetSdk 35。
-- 簽章與此對話先前的 3.2.1 測試 APK 相同。可直接覆蓋該 APK 更新，不需解除安裝。
+- JDK 21（目標 Java 17）、Android SDK Platform 35、Build Tools 35.0.0、Gradle 8.11.1、AGP 8.9.2。
+- `./gradlew assembleDebug lintDebug`：**BUILD SUCCESSFUL**。
+- Lint：**0 errors、3 warnings**（AndroidX 有新版可升級兩則；`enableOnBackInvokedCallback` 在 API 33 以下會被忽略，程式已有版本判斷）。
+- APK：版本 3.3.0、versionCode 30300、minSdk 26、targetSdk 35，以專案內 `app/debug.keystore` 簽署並通過 `apksigner verify`。
 
-## 49 項瀏覽器流程回歸
+## 瀏覽器流程回歸：57 項
 
-使用隔離的 Chromium、412 × 892 觸控模式與 mock `OCNative`。指令：
+隔離的 Chromium、412 × 892 觸控模式與 mock `OCNative`：
 
 ```sh
-python tests/web_regression.py --chromium /usr/bin/chromium
+python tests/web_regression.py --chromium /path/to/chromium
 ```
 
-涵蓋啟動、五個導覽入口、畫面品質切換與保存、App 暫停／恢復、面板暫停背景、快捷面板返回、相機不隨跳躍上下晃動、拍照橋接與隱藏介面、PNG 角色匯入、備份下載與分享、商店搜尋／空狀態／購買與庫存、房間和角色編輯、地形碰撞等價性、主題與圖片保存，以及完整備份還原個性、技能、角色引用 ID、擺設與畫面偏好。
+原有 49 項全部保留，另新增：雲朵不使用合成器動畫、晴天隱藏天氣畫布、更新節奏為整數個刷新、其他分頁不更新小島、回到首頁恢復更新、背包蓋住鏡頭按鈕、返回鍵關閉背包、橫向快捷卡片不被導覽遮住。**全部通過，無 JavaScript 執行例外。**
 
-另檢查 320 × 720、412 × 892 與 892 × 412 的導覽邊界／橫向溢位。完整紀錄見 `web-regression-results.json`。**全部通過，無 JavaScript 執行例外。**
-
-夜間另確認星空與螢火蟲的顯示狀態會隨時間更新，星空不再卡在白天的隱藏狀態。
+另以腳本逐一開啟商店、任務、設定、圖鑑、共同生活、更多、時間天氣、頭像快捷卡、日常抽屜、快捷動作、背包、資源膠囊、拍照模式、佈置與換裝編輯器、角色檔案、導覽自訂、商品詳情與各分頁，確認 Android 返回鍵都能關閉（商品詳情兩層需兩次）。
 
 ## 效能量測
 
-Linux Chromium 154.0.8037.57、412 × 892、DPR 1、觸控模式。自動行為與天氣會影響結果；以下是單次取樣，非 Android 手機實測。
+Linux Chromium、412 × 892、DPR 1、觸控模式、4 倍 CPU 降速，與 3.2.2 原版在相同環境交替量測。
 
-| 條件 | 平均每幀 | 約當 FPS | 95 百分位幀時間 |
-| --- | ---: | ---: | ---: |
-| 原版，4 倍 CPU 降速，10 秒 | 123.29 ms | 8.1 | 166.7 ms |
-| 3.2.2 最終整合，4 倍 CPU 降速，10 秒 | 24.01 ms | 41.6 | 50.0 ms |
-| 3.2.2 最終整合，不降速，5 秒 | 16.67 ms | 60.0 | 16.8 ms |
+`tests/performance_audit.py --throttle 4 --seconds 10`，各三次：
 
-持續繪製中的首頁元素由約 4,200 個減至約 1,350 個；啟動量測中的持續動畫由三百多個減至約 6–10 個。保留使用者素材與可互動物件，靜態背景以合併圖片顯示。
+| | 平均每幀 | 95 百分位 | >50 ms 幀數 | 10 秒內畫面數 | 主執行緒工作 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 3.2.2 | 24.6 ms | 50.0 ms | 14 | 407 | 8.80 s |
+| 3.3.0 | 19.4 ms | 33.4 ms | 9 | 517 | 7.48 s |
 
-開發過程亦量測夜間、雷雨、雪天與八位居民。4 倍降速下平均約 20–35 ms／幀，重負載仍可能掉幀；這些情境取樣在最後的鏡頭／量測修正之前，僅作壓力測試紀錄。最終 FPS 不應由該表推估所有機型。
+固定亂數種子與時間（11:00）的對照量測：
 
-原始數據見 `performance-results.json`。可用以下指令重新量測當前版本：
+| 指標 | 3.2.2 | 3.3.0 |
+| --- | ---: | ---: |
+| 圖層建立／拆除（次／秒） | 8.8–11.5 | 4.6–5.9 |
+| 合成圖層數 | 61–71 | 57–64 |
+| 螢幕上的圖層總面積 | 約 9.4 個畫面 | 約 6.2 個畫面 |
+| 平均每幀（rAF 間隔） | 32.8–39.6 ms | 21.9–23.5 ms |
+| 95 百分位 | 66.7 ms | 33.4–50 ms |
 
-```sh
-python tests/performance_audit.py --chromium /usr/bin/chromium --throttle 4 --seconds 10
-```
+在 6 倍降速下，自適應節奏會切換為穩定半速；不降速時維持每格更新。
 
 ## 真機驗證限制
 
-目前沒有 Android 真機或模擬器測試。瀏覽器檢查可驗證 HTML、操作與資料流程，不能驗證 Android 的系統選檔、分享接收、PixelCopy 實際影像、定位授權、鍵盤／導覽手勢與各機型 GPU 表現。APK 已編譯並驗證簽章，以上裝置行為仍需在手機確認。
-
-`android-preview.png` 等圖片是手機尺寸的瀏覽器截圖，不是真機截圖。GitHub Actions 的建置與回歸工作流程已提供，尚未在使用者的 repository 執行。
+目前沒有 Android 真機或模擬器。瀏覽器量測能驗證主執行緒工作量、圖層數量與圖層變動次數，但無法重現各家手機 GPU 的圖塊記憶體上限、實際幀率與閃爍表現；以上圖層與重繪的減少正是針對這些問題，仍需在手機上確認。系統選檔、分享、PixelCopy 拍照、定位授權與鍵盤行為同樣需要真機確認。

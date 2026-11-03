@@ -1,31 +1,28 @@
-# OC Shimeji Android 3.2.2
+# OC Shimeji Android 3.3.0
 
 把 `oc-shimeji-3_2_1-stable.html` 包裝成可離線執行的 Android App，保留原有繁體中文介面、角色、小島、養成、商店、繪畫工坊與動畫工作室。Android 層使用 Java + WebView，無需架設網站或後端。
 
 ![手機尺寸畫面預覽](docs/android-preview.png)
 
-## 3.2.2 效能與體驗更新
+## 3.3.0：流暢度與閃爍修正
 
-這一版直接修正場景引擎的重複更新、排序互相覆寫和強制重排，並減少 Android WebView 的合成圖層負擔：
+這一版針對「卡頓、掉 FPS、不斷閃爍」逐項量測後修正根本原因：
 
-- 靜態花海／草地合成單一已解碼圖片；保留互動物件、碰撞、原始角色素材與存檔格式。
-- 環境與角色共用更新迴圈，隱藏頁面、開啟面板與切到背景時暫停不必要工作。
-- 角色跳躍不再帶著整座島上下晃動；鏡頭跟隨有緩衝區。
-- 修正角色與家具排序反覆覆寫，以及縮放後週期性重建圖層的閃爍來源。
-- 對話改用場景座標定位，不再逐幀量測角色；移除看不見的逐字動畫。
-- 底部導覽預設有文字、HUD 尺寸固定，返回鍵可關閉快捷面板和拍照模式。
-- 設定新增「流暢／省電／完整動態」；預設流暢，省電模式以 30 FPS 為更新上限。
-- Android 拍照模式可直接擷取 App 畫面並另存 PNG。
-- 完整備份還原補上新版個性、技能、圖鑑、島上擺設、畫面偏好與導覽設定，並轉換角色 ID；完成後會重新載入小島。
+- **閃爍：** GPU 圖層不再隨角色走動反覆建立與拆除（變動次數減半以上）；雲朵不再把山丘與整片草地拆成額外圖層，螢幕上的圖層總面積由約 9.4 個畫面降到約 6 個；晴天隱藏比螢幕大 5 倍的天氣畫布；深色模式啟動不再先閃淺色。
+- **流暢度：** 更新節奏對齊螢幕刷新（90 Hz 手機不再被鎖在不穩定的 45 FPS）；裝置來不及時改用穩定半速而不是忽快忽慢，觸碰時立即恢復；其他分頁不再更新看不見的小島；切換分頁不再強制同步排版。
+- **介面：** 太陽／月亮不被 HUD 遮住、導覽圖示顏色一致、面板不再有粗焦點框、背包不被鏡頭按鈕擋住、橫向快捷卡片不被導覽擋住、返回鍵可關閉所有面板。
+- **安裝：** 內附共用 debug 簽章，之後的 debug APK 都可直接覆蓋安裝。
 
-測試結果和量測限制見 [docs/VALIDATION.md](docs/VALIDATION.md)，變更說明見 [docs/CHANGELOG-3.2.2.md](docs/CHANGELOG-3.2.2.md)。
+在 4 倍 CPU 降速的瀏覽器量測中，平均每幀由 24.6 ms 降到 19.4 ms，95 百分位由 50 ms 降到 33.4 ms，同時主執行緒工作時間減少約 15%。詳見 [docs/CHANGELOG-3.3.0.md](docs/CHANGELOG-3.3.0.md) 與 [docs/VALIDATION.md](docs/VALIDATION.md)。
+
+> **從 3.2.2 或更早版本升級：** 舊 APK 是用另一把 debug 金鑰簽署的，這一次必須先解除安裝才能安裝 3.3.0。**解除安裝會刪除存檔**，請先在「設定 → 資料 → 匯出完整備份」另存備份檔，安裝 3.3.0 後在同一處用「匯入完整備份／角色包」還原。之後的版本都使用專案內的同一把金鑰，可直接覆蓋更新。
 
 ## 快速開始：在 GitHub 取得 APK
 
 1. 解壓縮專案，在 GitHub 建立一個空白 repository。
 2. 將專案根目錄的**所有檔案與資料夾**上傳至 repository。根目錄必須直接看得到 `settings.gradle.kts`、`gradlew` 和 `app/`，並且要包含隱藏的 `.github/workflows/android.yml` 與 `gradle/wrapper/gradle-wrapper.jar`。不要只上傳 ZIP，也不要多包一層資料夾。
 3. 推送到 `main` 或 `master` 後，開啟 GitHub 的 **Actions → Build Android APK**。也可點 **Run workflow** 手動建置。
-4. 等待綠色勾勾，打開該次執行，在 **Artifacts** 下載 `OC-Shimeji-3.2.2-debug`，解壓縮後取得 `app-debug.apk`。
+4. 等待綠色勾勾，打開該次執行，在 **Artifacts** 下載 `OC-Shimeji-3.3.0-debug`，解壓縮後取得 `app-debug.apk`。
 5. 將 APK 傳到 Android 手機開啟，依系統提示允許該來源安裝，再安裝 App。
 
 GitHub Actions 會執行 `assembleDebug lintDebug`，以及獨立的瀏覽器流程回歸檢查，不需要 GitHub Secrets 或自行準備簽署金鑰。若 repository 的 Actions 被停用，先在該 repository 的 Actions 頁面啟用。
@@ -94,7 +91,7 @@ chmod +x gradlew
 
 ## 正式版簽署
 
-Actions 產物是供安裝測試的 **debug APK**。GitHub 的不同執行環境可能產生不同的 debug 金鑰，因此不同次下載的 APK 不保證可以直接覆蓋安裝；若遇到簽章不同，先備份資料。
+Actions 產物是供安裝測試的 **debug APK**，使用專案內附的 `app/debug.keystore`（密碼 `android`）簽署，因此每次建置的 debug APK 都能互相覆蓋安裝。這把金鑰是公開的，只能用於除錯版。
 
 正式發佈請在 Android Studio 選 **Build → Generate Signed App Bundle / APK**，建立並妥善保管自己的 release keystore。使用相同金鑰簽署後續版本，並遞增 `app/build.gradle.kts` 中的 `versionCode`。此專案不內含私人金鑰，`assembleRelease` 預設產生未簽署 APK；不要直接作為正式安裝檔發佈。Play 商店上架時請確認當時的 target SDK 要求。
 
